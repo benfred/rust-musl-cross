@@ -89,7 +89,7 @@ RUN export CC=$TARGET_CC && \
     echo "$CHECKSUM openssl-$VERS.tar.gz" > checksums.txt && \
     sha256sum -c checksums.txt && \
     tar xzf openssl-$VERS.tar.gz && cd openssl-$VERS && \
-    ./Configure $OPENSSL_ARCH -fPIC --prefix=/usr/local/musl/$TARGET && \
+    ./Configure no-dso no-unit-test no-async $OPENSSL_ARCH -fPIC --prefix=/usr/local/musl/$TARGET && \
     make depend && \
     make && sudo make install && \
     cd .. && rm -rf openssl-$VERS.tar.gz openssl-$VERS checksums.txt
