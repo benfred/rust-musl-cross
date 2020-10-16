@@ -31,10 +31,10 @@ RUN update-ca-certificates
 
 ADD config.mak /tmp/config.mak
 RUN cd /tmp && \
-    curl -Lsq -o musl-cross-make.zip https://github.com/richfelker/musl-cross-make/archive/v0.9.8.zip && \
+    curl -Lsq -o musl-cross-make.zip https://github.com/richfelker/musl-cross-make/archive/v0.9.9.zip && \
     unzip -q musl-cross-make.zip && \
     rm musl-cross-make.zip && \
-    mv musl-cross-make-0.9.8 musl-cross-make && \
+    mv musl-cross-make-0.9.9 musl-cross-make && \
     cp /tmp/config.mak /tmp/musl-cross-make/config.mak && \
     cd /tmp/musl-cross-make && \
     TARGET=$TARGET make install > /tmp/musl-cross-make.log && \
