@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 # The Rust toolchain to use when building our image
 ARG TOOLCHAIN=stable
@@ -10,9 +10,8 @@ ENV RUST_MUSL_CROSS_TARGET=$TARGET
 # Make sure we have basic dev tools for building C libraries.  Our goal
 # here is to support the musl-libc builds and Cargo builds needed for a
 # large selection of the most popular crates.
-#
 RUN apt-get update && \
-    apt-get install -y \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y \
         build-essential \
         cmake \
         curl \
@@ -22,6 +21,8 @@ RUN apt-get update && \
         xutils-dev \
         unzip \
         ca-certificates \
+        python3 \
+        python3-pip \
         && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -93,6 +94,23 @@ RUN export CC=$TARGET_CC && \
     make depend && \
     make && sudo make install && \
     cd .. && rm -rf openssl-$VERS.tar.gz openssl-$VERS checksums.txt
+
+# we also need libunwind / libunwind-ptrace built in addition
+COPY libunwind.patch /home/rust/libs
+RUN export CC=$TARGET_CC && \
+    export C_INCLUDE_PATH=$TARGET_C_INCLUDE_PATH && \
+    echo "Building libunwind" && \
+    VERS=1.5.0 && DOWNLOAD_VERS=1.5 && \
+    CHECKSUM=90337653d92d4a13de590781371c604f9031cdb50520366aa1e3a91e1efb1017 && \
+    cd /home/rust/libs && \
+    curl -sqLO https://github.com/libunwind/libunwind/releases/download/v$DOWNLOAD_VERS/libunwind-$VERS.tar.gz && \
+    echo "$CHECKSUM libunwind-$VERS.tar.gz" > checksums.txt && \
+    sha256sum -c checksums.txt && \
+    tar xzf libunwind-$VERS.tar.gz && cd libunwind-$VERS && \
+    patch -p1 -i ../libunwind.patch && \
+    ./configure  --prefix=/usr/local/musl/$TARGET --disable-minidebuginfo --enable-ptrace --disable-tests --disable-documentation --host $TARGET && \
+    make && make install && \
+    cd .. && rm -rf libunwind-$VERS.tar.gz libunwind-$VERS checksums.txt libunwind.patch
 
 ENV OPENSSL_DIR=/usr/local/musl/$TARGET/ \
     OPENSSL_INCLUDE_DIR=/usr/local/musl/$TARGET/include/ \
