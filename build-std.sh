@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-if [[ "$TOOLCHAIN" = "nightly" ]]
+if [[ "$TOOLCHAIN" = "nightly" && ("$TARGET" =~ ^s390x) ]]
 then
   export CARGO_NET_GIT_FETCH_WITH_CLI=true
   export CARGO_UNSTABLE_SPARSE_REGISTRY=true
@@ -14,8 +14,8 @@ then
 	cd -
   fi
 
-  cargo install xargo
-  cargo new --lib custom-std
+  cargo install xargo --git https://github.com/AverseABFun/xargo.git
+  cargo new --lib --edition 2021 custom-std
   cd custom-std
   cp /tmp/Xargo.toml .
   rustc -Z unstable-options --print target-spec-json --target "$TARGET" | tee "$TARGET.json"
@@ -27,11 +27,4 @@ then
   cd ..
   rm -rf /root/.xargo /root/.cargo/registry /root/.cargo/git custom-std
 
-  # compile libunwind
-  if [[ "$TARGET" = "powerpc64le-unknown-linux-musl" ]]
-  then
-    cargo run --manifest-path /tmp/compile-libunwind/Cargo.toml -- --target "$TARGET" "/root/.rustup/toolchains/$TOOLCHAIN-$HOST/lib/rustlib/src/rust/src/llvm-project/libunwind" out
-    cp out/libunwind*.a "/root/.rustup/toolchains/$TOOLCHAIN-$HOST/lib/rustlib/$TARGET/lib/"
-    rm -rf out /tmp/compile-libunwind
-  fi
 fi
